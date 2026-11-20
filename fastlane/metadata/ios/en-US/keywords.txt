@@ -1,0 +1,1 @@
+merge fruits,suika,watermelon,drop,merge
