@@ -69,8 +69,14 @@ jobs:
           flutter build apk --release --obfuscate --split-debug-info=build/symbols/android
           flutter build appbundle --release --obfuscate --split-debug-info=build/symbols/android
 
-      - name: Web build
-        run: flutter build web --release
+      - name: Web build (also published on GitHub Pages for device testing)
+        run: flutter build web --release --base-href "/game-096-merge-fruits/"
+
+      - name: Package web build for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
 
       - uses: actions/upload-artifact@v4
         with:
@@ -98,3 +104,23 @@ jobs:
           name: game-096-merge-fruits-store-graphics
           path: store/
           retention-days: 30
+
+  # Playable web version on https://<owner>.github.io/game-096-merge-fruits/ so every
+  # phone, tablet and desktop browser can be tested without installing.
+  # Needs Settings > Pages > Source = "GitHub Actions"; if Pages is off the
+  # deploy is skipped without failing CI.
+  pages:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
